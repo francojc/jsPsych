@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My experiment</title>
+    <script src="https://unpkg.com/jspsych@8.2.1"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+    <link href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body></body>
+  <script>
+    var jsPsych = initJsPsych({ // Initialize jsPsych
+      on_finish: function() { // after experiment, display data
+        jsPsych.data.displayData();
+       }
+    });
+
+    var timeline = []; // Create a timeline to hold the trials
+
+    // Preload images
+    var preload = { // Create a trial object to preload images
+      type: 'jsPsychPreload',
+      images: ['img/blue.png', 'img/orange.png']
+    };
+
+    // Add subject id and condition assignment
+    // add participant id
+    var subject_id = jsPsych.randomization.randomID(7);
+    var condition_assignment = jsPsych.randomization.sampleWithoutReplacement(["condA", "condB"], 1)[0];
+
+    // Add properties to data
+    jsPsych.data.addProperties({ // Add properties to the data
+      subject: subject_id, // Add the subject ID
+      condition: condition_assignment // Add the condition assignment
+    });
+
+    // Welcome message
+    var welcome = { // Create a trial object to display a welcome message
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<p>Welcome to the experiment. Press any key to begin.</p>"
+    };
+        timeline.push(welcome); // Add the welcome trial to the timeline
+
+    // Instructions
+    var instructions = { // Create a trial object to display instructions
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+        <p>In this experiment, a circle will appear in the center
+        of the screen.</p><p>If the circle is <strong>blue</strong>,
+        press the letter F on the keyboard as fast as you can.</p>
+        <p>If the circle is <strong>orange</strong>, press the letter J
+        as fast as you can.</p>
+        <div style='width: 700px;'>
+        <div style='float: left;'><img src='img/blue.png'></img>
+        <p class='small'><strong>Press the F key</strong></p></div>
+        <div style='float: right;'><img src='img/orange.png'></img>
+        <p class='small'><strong>Press the J key</strong></p></div>
+        </div>
+        <p>Press any key to begin.</p>
+        `,
+      post_trial_gap: 2000
+    };
+    timeline.push(instructions); // Add the instructions trial to the timeline
+
+    // Setup stimuli
+    var test_stimuli = [ // Create an array of test stimuli
+      { stimulus: "img/blue.png", correct_response: 'f'},
+      { stimulus: "img/orange.png", correct_response: 'j'}
+    ];
+
+    // Create trials
+    var fixation = { // Create a trial object to display a fixation cross
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<div style='font-size:60px'>+</div>",
+      choices: "NO_KEYS",
+      trial_duration: function() {
+        return jsPsych.randomization.sampleWithoutReplacement([200, 500, 750, 100, 1250, 1500, 1750, 2000], 1)[0];
+      },
+      data: {
+        task: 'fixation'
+      }
+    };
+    var test = { // Create a trial object to display a test stimulus
+      type: jsPsychImageKeyboardResponse,
+      stimulus: jsPsych.timelineVariable('stimulus'),
+      choices: ['f', 'j'],
+      data: {
+        task: 'response',
+        correct_response: jsPsych.timelineVariable('correct_response')
+      },
+      on_finish: function(data) {
+        data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+      }
+    };
+    var test_procedure = { // Create a procedure to display the test trials
+      timeline: [fixation, test],
+      timeline_variables: test_stimuli,
+      randomize_order: true,
+      repetitions: 5
+    };
+    timeline.push(test_procedure); // Add the stimuli to the timeline
+
+    // Staring the experiment message
+    var start_exp = { // Create a trial object to display a message
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<p>Practice test completed. The experiment will begin shortly. Get ready!</p>",
+      trial_duration: 2000
+    };
+    timeline.push(start_exp); // Add the message trial to the timeline
+
+    // Experiment trials
+    //var experiment = { // Create a trial object to display the experiment trials
+    //  type: jsPsychImageKeyboardResponse,
+    //  stimulus: jsPsych.timelineVariable('stimulus'),
+    //  choices: ['f', 'j'],
+    //  data: { // Add data to the trial
+    //    stimulus: jsPsych.timelineVariable('stimulus'),
+    //    correct_response: jsPsych.timelineVariable('correct_response')
+    //  },
+    //  on_finish: function(data){ // Add a function to run after the trial
+    //    data.correct = data.key_press == jsPsych.pluginAPI.convertKeyCharacterToKeyCode(data.correct_response);
+    //  }
+    //};
+    //
+
+    var debrief = { // Create a trial object to display a debrief message
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+
+        var trials = jsPsych.data.get().filter({task: 'response'});
+        var correct_trials = trials.filter({correct: true});
+        var accuracy = Math.round(correct_trials.count() / trials.count() * 100);
+        var rt = Math.round(correct_trials.select('rt').mean());
+
+        return `<p>You responded correctly on ${accuracy}% of the trials.</p> <p>Your average response time was ${rt}ms.</p> <p>Press any key to complete the experiment.</p>`;
+
+      }
+    };
+    timeline.push(debrief); // Add the debrief trial to the timeline
+
+    // Start the experiment
+    jsPsych.run(timeline); // Run the experiment
+
+  </script>
+</html>
