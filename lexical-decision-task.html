@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Lexical Decision Task with Masked Priming</title>
+    <script src="https://unpkg.com/jspsych@8.2.1"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@1.1.3"></script>
+    <link href="https://unpkg.com/jspsych@8.2.1/css/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+      .stimulus {
+        font-size: 36px;
+        font-family: Arial, sans-serif;
+      }
+      .mask {
+        font-size: 36px;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body></body>
+  <script>
+    var jsPsych = initJsPsych({
+      on_finish: function() {
+        jsPsych.data.displayData();
+      }
+    });
+    // Initialize timeline
+    var timeline = [];
+
+    // Generate a random subject ID
+    var subject_id = jsPsych.randomization.randomID(7);
+    
+    // Add properties to data
+    jsPsych.data.addProperties({
+      subject: subject_id
+    });
+
+    // Welcome message
+    var welcome = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<p>Welcome to the lexical decision task. Press any key to begin.</p>"
+    };
+    timeline.push(welcome);
+
+    // Instructions
+    var instructions = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: `
+        <p>In this task, you will see strings of letters appear on the screen one at a time.</p>
+        <p>Your job is to decide whether each string is a real English word or not.</p>
+        <p>If you think the string is a real word, press the 'F' key.</p>
+        <p>If you think the string is NOT a real word, press the 'J' key.</p>
+        <p>Try to respond as quickly and accurately as possible.</p>
+        <p>Each trial will begin with a fixation cross (+) in the center of the screen.</p>
+        <p>Press any key to begin a few practice trials.</p>
+      `,
+      post_trial_gap: 1000
+    };
+    timeline.push(instructions);
+
+    // Define stimuli for the experiment
+    var practice_stimuli = [
+      {prime: "table", target: "CHAIR", is_word: true, related: true},
+      {prime: "dance", target: "FLIRP", is_word: false, related: false},
+      {prime: "water", target: "DRINK", is_word: true, related: true},
+      {prime: "music", target: "DETCH", is_word: false, related: false}
+    ];
+    
+    // Real experimental stimuli would have many more items and be more carefully controlled
+    var test_stimuli = [
+      {prime: "doctor", target: "NURSE", is_word: true, related: true},
+      {prime: "bread", target: "BUTTER", is_word: true, related: true},
+      {prime: "king", target: "CROWN", is_word: true, related: true},
+      {prime: "lion", target: "TIGER", is_word: true, related: true},
+      {prime: "cake", target: "SMOKE", is_word: true, related: false},
+      {prime: "paper", target: "WINDOW", is_word: true, related: false},
+      {prime: "pencil", target: "FLOWER", is_word: true, related: false},
+      {prime: "book", target: "CLOUD", is_word: true, related: false},
+      {prime: "rain", target: "GLARP", is_word: false, related: false},
+      {prime: "foot", target: "TRONK", is_word: false, related: false},
+      {prime: "girl", target: "FILP", is_word: false, related: false},
+      {prime: "sleep", target: "DAKE", is_word: false, related: false},
+      {prime: "hair", target: "MOKE", is_word: false, related: false},
+      {prime: "chair", target: "SLIB", is_word: false, related: false},
+      {prime: "tree", target: "PLAG", is_word: false, related: false},
+      {prime: "dog", target: "BLORN", is_word: false, related: false}
+    ];
+
+    // Create fixation cross
+    var fixation = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<div style='font-size:60px'>+</div>",
+      choices: "NO_KEYS",
+      trial_duration: 500,
+      data: function() {
+        return {
+          task: 'fixation'
+        };
+      }
+    };
+
+    // Create forward mask
+    var forward_mask = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        // Create a mask the same length as the prime
+        var prime = jsPsych.timelineVariable('prime');
+        var mask_length = prime.length;
+        var mask = "######".substring(0, mask_length);
+        return "<div class='mask'>" + mask + "</div>";
+      },
+      choices: "NO_KEYS",
+      trial_duration: 500,
+      data: function() {
+        return {
+          task: 'forward_mask'
+        };
+      }
+    };
+
+    // Create prime
+    var prime = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        var prime_word = jsPsych.timelineVariable('prime');
+        return "<div class='stimulus'>" + prime_word + "</div>";
+      },
+      choices: "NO_KEYS",
+      trial_duration: 70, // Prime is presented for 70ms
+      data: function() {
+        return {
+          task: 'prime',
+          prime: jsPsych.timelineVariable('prime')
+        };
+      }
+    };
+
+    // Create backward mask (optional, can be removed if not needed)
+    var backward_mask = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        // Create a mask the same length as the prime
+        var prime = jsPsych.timelineVariable('prime');
+        var mask_length = prime.length;
+        var mask = "######".substring(0, mask_length);
+        return "<div class='mask'>" + mask + "</div>";
+      },
+      choices: "NO_KEYS",
+      trial_duration: 30,
+      data: function() {
+        return {
+          task: 'backward_mask'
+        };
+      }
+    };
+
+    // Create target
+    var target = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        var target_word = jsPsych.timelineVariable('target');
+        return "<div class='stimulus'>" + target_word + "</div>";
+      },
+      choices: ['f', 'j'],
+      data: function() {
+        return {
+          task: 'target',
+          target: jsPsych.timelineVariable('target'),
+          prime: jsPsych.timelineVariable('prime'),
+          is_word: jsPsych.timelineVariable('is_word'),
+          related: jsPsych.timelineVariable('related'),
+          correct_response: jsPsych.timelineVariable('is_word') ? 'f' : 'j'
+        };
+      },
+      on_finish: function(data) {
+        // Record if response was correct
+        data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+      }
+    };
+
+    // Create practice procedure
+    var practice_procedure = {
+      timeline: [fixation, forward_mask, prime, backward_mask, target],
+      timeline_variables: practice_stimuli,
+      randomize_order: true
+    };
+    timeline.push(practice_procedure);
+
+    // Message after practice
+    var practice_complete = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: "<p>Practice complete. The main experiment will begin now.</p><p>Remember:</p><p>Press 'F' for real words, press 'J' for non-words.</p><p>Press any key to begin.</p>",
+      post_trial_gap: 1000
+    };
+    timeline.push(practice_complete);
+
+    // Create test procedure
+    var test_procedure = {
+      timeline: [fixation, forward_mask, prime, backward_mask, target],
+      timeline_variables: test_stimuli,
+      randomize_order: true
+    };
+    timeline.push(test_procedure);
+
+    // Debrief
+    var debrief = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        // Calculate and display accuracy and RT
+        var trials = jsPsych.data.get().filter({task: 'target'});
+        var correct_trials = trials.filter({correct: true});
+        var accuracy = Math.round(correct_trials.count() / trials.count() * 100);
+        var rt = Math.round(correct_trials.select('rt').mean());
+
+        // Calculate accuracy by condition
+        var word_trials = trials.filter({is_word: true});
+        var nonword_trials = trials.filter({is_word: false});
+        var related_trials = trials.filter({related: true});
+        var unrelated_trials = trials.filter({related: false, is_word: true});
+        
+        var word_accuracy = Math.round(word_trials.filter({correct: true}).count() / word_trials.count() * 100);
+        var nonword_accuracy = Math.round(nonword_trials.filter({correct: true}).count() / nonword_trials.count() * 100);
+        
+        var related_rt = Math.round(related_trials.filter({correct: true}).select('rt').mean());
+        var unrelated_rt = Math.round(unrelated_trials.filter({correct: true}).select('rt').mean());
+        
+        return `
+          <p>Thank you for participating!</p>
+          <p>Your overall accuracy was ${accuracy}%.</p>
+          <p>Your average response time was ${rt}ms.</p>
+          <p>Word accuracy: ${word_accuracy}%</p>
+          <p>Non-word accuracy: ${nonword_accuracy}%</p>
+          <p>Related prime-target RT: ${related_rt}ms</p>
+          <p>Unrelated prime-target RT: ${unrelated_rt}ms</p>
+          <p>Press any key to complete the experiment.</p>
+        `;
+      }
+    };
+    timeline.push(debrief);
+
+    // Run the experiment
+    jsPsych.run(timeline);
+  </script>
+</html>
