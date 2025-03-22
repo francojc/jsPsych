@@ -29,7 +29,7 @@
 
     // Generate a random subject ID
     var subject_id = jsPsych.randomization.randomID(7);
-    
+
     // Add properties to data
     jsPsych.data.addProperties({
       subject: subject_id
@@ -65,7 +65,7 @@
       {prime: "water", target: "DRINK", is_word: true, related: true},
       {prime: "music", target: "DETCH", is_word: false, related: false}
     ];
-    
+
     // Real experimental stimuli would have many more items and be more carefully controlled
     var test_stimuli = [
       {prime: "doctor", target: "NURSE", is_word: true, related: true},
@@ -217,13 +217,13 @@
         var nonword_trials = trials.filter({is_word: false});
         var related_trials = trials.filter({related: true});
         var unrelated_trials = trials.filter({related: false, is_word: true});
-        
+
         var word_accuracy = Math.round(word_trials.filter({correct: true}).count() / word_trials.count() * 100);
         var nonword_accuracy = Math.round(nonword_trials.filter({correct: true}).count() / nonword_trials.count() * 100);
-        
+
         var related_rt = Math.round(related_trials.filter({correct: true}).select('rt').mean());
         var unrelated_rt = Math.round(unrelated_trials.filter({correct: true}).select('rt').mean());
-        
+
         return `
           <p>Thank you for participating!</p>
           <p>Your overall accuracy was ${accuracy}%.</p>
